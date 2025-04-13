@@ -49,6 +49,23 @@ function removeDuplicates() {
   }
 }
 
+function parseDataMatrix(data) {
+  const components = data.split('~');
+  return {
+    batchId: components[0] || '',
+    manufacturingDate: components[1] || '',
+    timestamp: components[2] || '',
+    productInfo: components[3] || '',
+    serialNumbers: [
+      components[3] ? components[3].split('#')[1] || '' : '',  // Extract serial from product info
+      components[4] || '',
+      components[5] || '',
+      components[6] || ''
+    ].filter(Boolean),  // Remove empty values
+    controlCode: components[8] || ''
+  };
+}
+
 function doPost(e) {
   try {
     // Parse the incoming data
@@ -67,14 +84,31 @@ function doPost(e) {
       sheet = ss.getSheetByName('IO') || ss.insertSheet('IO');
       if (sheet.getLastRow() === 0) {
         // Add headers if sheet is empty
-        sheet.appendRow(['Timestamp', 'Unique Identifier', 'Distributor']);
+        sheet.appendRow([
+          'Timestamp', 
+          'Batch ID', 
+          'Manufacturing Date', 
+          'Scan Timestamp', 
+          'Product Info',
+          'Serial Numbers',
+          'Control Code',
+          'Distributor'
+        ]);
       }
     } else {
       // For inventory in, use or create 'II' sheet
       sheet = ss.getSheetByName('II') || ss.insertSheet('II');
       if (sheet.getLastRow() === 0) {
         // Add headers if sheet is empty
-        sheet.appendRow(['Timestamp', 'Unique Identifier']);
+        sheet.appendRow([
+          'Timestamp', 
+          'Batch ID', 
+          'Manufacturing Date', 
+          'Scan Timestamp', 
+          'Product Info',
+          'Serial Numbers',
+          'Control Code'
+        ]);
       }
     }
     
@@ -82,15 +116,21 @@ function doPost(e) {
     const dataRange = sheet.getDataRange();
     const values = dataRange.getValues();
     
-    // Skip header row and check for duplicates
+    // Parse the DataMatrix components
+    const parsedData = parseDataMatrix(barcode);
+    
+    // Skip header row and check for duplicates using batch ID and first serial number
     for (let i = 1; i < values.length; i++) {
-      const existingBarcode = String(values[i][1]).trim(); // Column B (index 1)
-      if (existingBarcode === barcode) {
+      const existingBatchId = String(values[i][1]).trim(); // Column B (index 1)
+      const existingSerialNumbers = String(values[i][5]).trim(); // Column F (index 5)
+      
+      if (existingBatchId === parsedData.batchId && 
+          existingSerialNumbers.includes(parsedData.serialNumbers[0])) {
         console.log('Duplicate found:', barcode);
         return ContentService.createTextOutput(JSON.stringify({
           success: false,
           duplicate: true,
-          message: 'Barcode already exists in sheet'
+          message: 'Item already exists in sheet'
         })).setMimeType(ContentService.MimeType.JSON);
       }
     }
@@ -99,18 +139,26 @@ function doPost(e) {
     const now = new Date();
     const timestamp = Utilities.formatDate(now, 'Asia/Kolkata', 'yyyy-MM-dd HH:mm:ss');
     
+    const rowData = [
+      timestamp,
+      parsedData.batchId,
+      parsedData.manufacturingDate,
+      parsedData.timestamp,
+      parsedData.productInfo,
+      parsedData.serialNumbers.join(', '),
+      parsedData.controlCode
+    ];
+
     if (mode === 'out') {
-      // For inventory out, include distributor
-      sheet.appendRow([timestamp, barcode, distributor]);
-    } else {
-      // For inventory in, just timestamp and barcode
-      sheet.appendRow([timestamp, barcode]);
+      rowData.push(distributor); // Add distributor for Inventory Out
     }
     
-    console.log('Successfully added barcode:', barcode);
+    sheet.appendRow(rowData);
+    
+    console.log('Successfully added data:', parsedData);
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
-      message: 'Barcode added successfully'
+      message: 'Data added successfully'
     })).setMimeType(ContentService.MimeType.JSON);
     
   } catch (error) {
