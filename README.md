@@ -11,8 +11,6 @@ A React Native mobile application for tracking inventory using barcode scanning 
 - 🗑️ Duplicate removal functionality
 - 🔄 Automatic timestamp recording
 - 📱 Camera flip functionality
-- 📤 Inventory Out tracking with distributor information
-- 📥 Inventory In tracking
 
 ## Project Structure
 
@@ -20,9 +18,7 @@ A React Native mobile application for tracking inventory using barcode scanning 
 InventoryTracker/
 ├── App.js                 # Main application component
 ├── HomeScreen.js          # Home screen component
-├── QRScanner.js           # Barcode scanning component for Inventory In
-├── QRScannerOut.js        # Barcode scanning component for Inventory Out
-├── InventoryOutScreen.js  # Screen for entering distributor information
+├── QRScanner.js           # Barcode scanning component
 ├── appsScriptService.js   # Google Apps Script integration
 ├── Code.gs                # Google Apps Script code
 ├── assets/                # Static assets
@@ -65,9 +61,7 @@ InventoryTracker/
 4. **Google Sheets Setup**
    - Create a new Google Sheet
    - Share it with the email address associated with your Google Apps Script
-   - The script will automatically create two sheets:
-     - 'II' sheet for Inventory In data
-     - 'IO' sheet for Inventory Out data with distributor information
+   - The script will automatically create the necessary columns
 
 5. **Run the application**
    ```bash
@@ -78,27 +72,17 @@ InventoryTracker/
 
 ## Usage
 
-1. **Inventory In**
+1. **Scanning Barcodes**
    - Open the app
-   - Click "Inventory In"
    - Point the camera at a barcode
    - The app will automatically scan and process the barcode
-   - Data will be stored in the 'II' sheet
+   - You'll receive immediate feedback if the barcode is a duplicate
 
-2. **Inventory Out**
-   - Open the app
-   - Click "Inventory Out"
-   - Enter the distributor name
-   - Click "Start Scanning"
-   - Point the camera at a barcode
-   - The app will automatically scan and process the barcode
-   - Data will be stored in the 'IO' sheet with distributor information
-
-3. **Viewing Inventory**
+2. **Viewing Inventory**
    - Navigate to the home screen
-   - View your inventory data in real-time in Google Sheets
+   - View your inventory data in real-time
 
-4. **Managing Duplicates**
+3. **Managing Duplicates**
    - The app automatically prevents duplicate entries
    - Use the remove duplicates function to clean up existing duplicates
 
@@ -118,21 +102,16 @@ The app supports the following barcode formats:
 
 ### Data Storage
 - Data is stored in Google Sheets
-- Two separate sheets:
-  - 'II' sheet for Inventory In:
-    - Timestamp
-    - Unique Identifier (barcode)
-  - 'IO' sheet for Inventory Out:
-    - Timestamp
-    - Unique Identifier (barcode)
-    - Distributor
+- Each entry includes:
+  - Barcode number
+  - Timestamp
+  - Status (new/duplicate)
 
 ### Error Handling
 - Duplicate entry detection
 - Network error handling
 - Invalid barcode format detection
 - Google Sheets connection issues
-- Distributor name validation
 
 ## Troubleshooting
 
@@ -150,11 +129,6 @@ The app supports the following barcode formats:
    - Clear app cache
    - Restart the application
    - Check for updates
-
-4. **Inventory Out not working**
-   - Make sure you've entered a distributor name
-   - Check if the Google Apps Script is properly deployed
-   - Verify that the 'IO' sheet exists in your Google Sheets
 
 ## Contributing
 

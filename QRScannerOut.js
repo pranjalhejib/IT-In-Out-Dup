@@ -112,7 +112,37 @@ const QRScannerOut = () => {
         const response = await appendToSheet(data, 'out', distributor);
         console.log('Response from appendToSheet:', response);
         
-        if (response.success) {
+        if (response.duplicate) {
+          Alert.alert(
+            "Duplicate Entry",
+            response.message,
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  setScanned(false);
+                  setIsSaving(false);
+                  isProcessing.current = false;
+                }
+              }
+            ]
+          );
+        } else if (response.notFound) {
+          Alert.alert(
+            "Not Found",
+            `Barcode ${data} was not found in inventory.`,
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  setScanned(false);
+                  setIsSaving(false);
+                  isProcessing.current = false;
+                }
+              }
+            ]
+          );
+        } else if (response.success) {
           // 6. Update local state for duplicate prevention
           setRecentlyScanned(prev => [...prev, data]);
           setScannedHistory(prev => [...prev, data]);
@@ -133,21 +163,6 @@ const QRScannerOut = () => {
                   setIsSaving(false);
                   isProcessing.current = false;
                   navigation.navigate('Home');
-                }
-              }
-            ]
-          );
-        } else if (response.notFound) {
-          Alert.alert(
-            "Not Found",
-            `Barcode ${data} was not found in inventory.`,
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  setScanned(false);
-                  setIsSaving(false);
-                  isProcessing.current = false;
                 }
               }
             ]
