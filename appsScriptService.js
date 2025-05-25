@@ -1,5 +1,5 @@
 // appsScriptService.js
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz_tJRzLM30XtCSLRCPm-LDBY7UrQSB5_-6HlaKAbbG9mnNoACI_dZvmsyuOEUWUHfeXQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZ5wa2vFn8cLIHB34YByHNMdxQMb0C3ZbOKBKrJpKJprdfuEhpc_kxmdsOpr54HgjaTA/exec';
 
 // Initialize sheet with headers if needed
 export const initializeSheet = async () => {

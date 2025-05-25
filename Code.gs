@@ -1,113 +1,102 @@
-// Google Apps Script code for handling barcode scanning
+// Google Apps Script code for handling barcode scanning and inventory tracking
+
+/**
+ * Handles GET requests to the web app
+ */
 function doGet(e) {
-  // Check if this is a removeDuplicates request
-  if (e.parameter.action === 'removeDuplicates') {
-    return removeDuplicates();
-  }
-  
   return ContentService.createTextOutput(JSON.stringify({
     success: true,
     message: 'Service is running'
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
-function removeDuplicates() {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getActiveSheet();
-    const dataRange = sheet.getDataRange();
-    const values = dataRange.getValues();
-    
-    // Create a map to track unique barcodes
-    const uniqueBarcodes = new Map();
-    const rowsToKeep = [values[0]]; // Keep header row
-    
-    // Process each row (skip header)
-    for (let i = 1; i < values.length; i++) {
-      const barcode = String(values[i][1]).trim();
-      if (!uniqueBarcodes.has(barcode)) {
-        uniqueBarcodes.set(barcode, true);
-        rowsToKeep.push(values[i]);
-      }
+/**
+ * Checks if the required sheets exist and initializes them if needed
+ */
+function checkAndInitializeSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ['II', 'IO'];
+  
+  sheets.forEach(sheetName => {
+    let sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      sheet = ss.insertSheet(sheetName);
     }
+    initializeSheetHeaders(sheet);
+  });
+}
+
+/**
+ * Initializes sheet headers for both II and IO sheets
+ */
+function initializeSheetHeaders(sheet) {
+  // Set up headers based on sheet name
+  if (sheet.getName() === 'IO') {
+    const headers = [
+      'Timestamp',
+      'Batch ID',
+      'Manufacturing Date',
+      'Scan Timestamp',
+      'Product Info',
+      'Serial Number',
+      'Control Code',
+      'Distributor'
+    ];
     
-    // Clear the sheet and write back unique rows
-    sheet.clear();
-    sheet.getRange(1, 1, rowsToKeep.length, rowsToKeep[0].length).setValues(rowsToKeep);
+    // Set headers
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     
-    return ContentService.createTextOutput(JSON.stringify({
-      success: true,
-      message: `Removed ${values.length - rowsToKeep.length} duplicate entries`
-    })).setMimeType(ContentService.MimeType.JSON);
+    // Format headers
+    sheet.getRange(1, 1, 1, headers.length)
+      .setFontWeight('bold');
+      
+    // Auto-resize columns
+    sheet.autoResizeColumns(1, headers.length);
     
-  } catch (error) {
-    console.error('Error in removeDuplicates:', error);
-    return ContentService.createTextOutput(JSON.stringify({
-      success: false,
-      message: 'Error removing duplicates: ' + error.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    // Freeze header row
+    sheet.setFrozenRows(1);
+    
+    return true;
+  } else if (sheet.getName() === 'II') {
+    const headers = [
+      'Timestamp',
+      'Batch ID',
+      'Manufacturing Date',
+      'Scan Timestamp',
+      'Product Info',
+      'Serial Number',
+      'Control Code'
+    ];
+    
+    // Set headers
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    
+    // Format headers
+    sheet.getRange(1, 1, 1, headers.length)
+      .setFontWeight('bold');
+      
+    // Auto-resize columns
+    sheet.autoResizeColumns(1, headers.length);
+    
+    // Freeze header row
+    sheet.setFrozenRows(1);
+    
+    return true;
   }
+  return false;
 }
 
-function parseDataMatrix(data) {
-  const components = data.split('~');
-  return {
-    batchId: components[0] || '',
-    manufacturingDate: components[1] || '',
-    timestamp: components[2] || '',
-    productInfo: components[3] || '',
-    serialNumbers: [
-      components[3] ? components[3].split('#')[1] || '' : '',  // Extract serial from product info
-      components[4] || '',
-      components[5] || '',
-      components[6] || ''
-    ].filter(Boolean),  // Remove empty values
-    controlCode: components[8] || ''
-  };
-}
-
-// Function to check if a string is in DataMatrix format
-function isDataMatrixFormat(data) {
-  return data.includes('~');
-}
-
-// Function to initialize sheet headers
-function initializeSheetHeaders(sheet, mode) {
-  if (sheet.getLastRow() === 0) {
-    if (mode === 'out') {
-      // For inventory out, use or create 'IO' sheet
-      sheet.appendRow([
-        'Timestamp', 
-        'Batch ID', 
-        'Manufacturing Date', 
-        'Scan Timestamp', 
-        'Product Info',
-        'Serial Numbers',
-        'Control Code',
-        'Distributor'
-      ]);
-    } else {
-      // For inventory in, use or create 'II' sheet with DataMatrix headers
-      sheet.appendRow([
-        'Timestamp', 
-        'Batch ID', 
-        'Manufacturing Date', 
-        'Scan Timestamp', 
-        'Product Info',
-        'Serial Numbers',
-        'Control Code'
-      ]);
-    }
-  }
-}
-
+/**
+ * Handles POST requests to the web app
+ * Processes barcode scans and adds data to the appropriate sheet
+ */
 function doPost(e) {
   try {
     // Parse the incoming data
     const data = JSON.parse(e.postData.contents);
-    const barcode = String(data.barcode).trim(); // Ensure barcode is a string and trim whitespace
-    const mode = data.mode || 'in'; // Default to 'in' if not specified
-    const distributor = data.distributor || ''; // Get distributor name if provided
+    const barcode = String(data.barcode).trim();
+    const mode = data.mode || 'in';
+    const distributor = data.distributor || '';
     
     // Get the active spreadsheet
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -115,13 +104,11 @@ function doPost(e) {
     // Get the appropriate sheet based on mode
     let sheet;
     if (mode === 'out') {
-      // For inventory out, use or create 'IO' sheet
       sheet = ss.getSheetByName('IO') || ss.insertSheet('IO');
-      initializeSheetHeaders(sheet, 'out');
+      initializeSheetHeaders(sheet);
     } else {
-      // For inventory in, use or create 'II' sheet
       sheet = ss.getSheetByName('II') || ss.insertSheet('II');
-      initializeSheetHeaders(sheet, 'in');
+      initializeSheetHeaders(sheet);
     }
     
     // Get all data from the sheet
@@ -136,25 +123,20 @@ function doPost(e) {
     if (isDataMatrix) {
       parsedData = parseDataMatrix(barcode);
     } else {
-      // For regular barcodes, create a simplified structure
       parsedData = {
         batchId: barcode,
         manufacturingDate: '',
         timestamp: '',
         productInfo: '',
-        serialNumbers: [],
+        serialNumber: '',
         controlCode: ''
       };
     }
     
-    // Skip header row and check for duplicates using batch ID and first serial number
+    // Check for duplicates using batch ID
     for (let i = 1; i < values.length; i++) {
-      const existingBatchId = String(values[i][1]).trim(); // Column B (index 1)
-      const existingSerialNumbers = String(values[i][5]).trim(); // Column F (index 5)
-      
-      if (existingBatchId === parsedData.batchId || 
-          (parsedData.serialNumbers.length > 0 && existingSerialNumbers.includes(parsedData.serialNumbers[0]))) {
-        console.log('Duplicate found:', barcode);
+      const existingBatchId = String(values[i][1]).trim();
+      if (existingBatchId === parsedData.batchId) {
         return ContentService.createTextOutput(JSON.stringify({
           success: false,
           duplicate: true,
@@ -173,17 +155,16 @@ function doPost(e) {
       parsedData.manufacturingDate,
       parsedData.timestamp,
       parsedData.productInfo,
-      parsedData.serialNumbers.join(', '),
+      parsedData.serialNumber,
       parsedData.controlCode
     ];
 
     if (mode === 'out') {
-      rowData.push(distributor); // Add distributor for Inventory Out
+      rowData.push(distributor);
     }
     
     sheet.appendRow(rowData);
     
-    console.log('Successfully added data:', parsedData);
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
       message: 'Data added successfully'
@@ -196,4 +177,60 @@ function doPost(e) {
       message: 'Error processing request: ' + error.toString()
     })).setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+/**
+ * Parses DataMatrix barcode data and extracts components
+ */
+function parseDataMatrix(data) {
+  const components = data.split('~');
+  return {
+    batchId: components[0] || '',
+    manufacturingDate: components[1] || '',
+    timestamp: components[2] || '',
+    productInfo: components[3] || '',
+    serialNumber: components[4] || '',
+    controlCode: components[5] || ''
+  };
+}
+
+/**
+ * Checks if a string is in DataMatrix format
+ */
+function isDataMatrixFormat(data) {
+  return data.includes('~');
+}
+
+/**
+ * Configures the app for sharing
+ * This function should be run once before sharing the app
+ */
+function configureForSharing() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // 1. Set spreadsheet sharing settings
+  ss.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  
+  // 2. Initialize sheets if they don't exist
+  checkAndInitializeSheets();
+  
+  // 3. Create a new deployment
+  const deployment = ScriptApp.newDeployment()
+    .forWebApp()
+    .setExecuteAs('me')
+    .setAccess('anyone')
+    .deploy();
+  
+  // 4. Get the deployment URL
+  const url = deployment.getUrl();
+  
+  // 5. Log the sharing information
+  console.log('App is ready for sharing!');
+  console.log('Spreadsheet URL:', ss.getUrl());
+  console.log('Web App URL:', url);
+  
+  return {
+    spreadsheetUrl: ss.getUrl(),
+    webAppUrl: url
+  };
 } 
