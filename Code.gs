@@ -199,38 +199,4 @@ function parseDataMatrix(data) {
  */
 function isDataMatrixFormat(data) {
   return data.includes('~');
-}
-
-/**
- * Configures the app for sharing
- * This function should be run once before sharing the app
- */
-function configureForSharing() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  // 1. Set spreadsheet sharing settings
-  ss.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  
-  // 2. Initialize sheets if they don't exist
-  checkAndInitializeSheets();
-  
-  // 3. Create a new deployment
-  const deployment = ScriptApp.newDeployment()
-    .forWebApp()
-    .setExecuteAs('me')
-    .setAccess('anyone')
-    .deploy();
-  
-  // 4. Get the deployment URL
-  const url = deployment.getUrl();
-  
-  // 5. Log the sharing information
-  console.log('App is ready for sharing!');
-  console.log('Spreadsheet URL:', ss.getUrl());
-  console.log('Web App URL:', url);
-  
-  return {
-    spreadsheetUrl: ss.getUrl(),
-    webAppUrl: url
-  };
 } 
