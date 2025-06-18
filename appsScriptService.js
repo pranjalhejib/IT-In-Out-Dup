@@ -1,5 +1,6 @@
 // appsScriptService.js
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZ5wa2vFn8cLIHB34YByHNMdxQMb0C3ZbOKBKrJpKJprdfuEhpc_kxmdsOpr54HgjaTA/exec';
+// Replace this URL with your complete Google Apps Script deployment URL
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJdsL6skiqaUdkhc9D9d9QJ-TbB6vUiPj3y8Et7S7eaj8DY3X-ZR-ECaymsz0_O059wA/exec';
 
 // Initialize sheet with headers if needed
 export const initializeSheet = async () => {
@@ -119,4 +120,4 @@ export const removeDuplicates = async () => {
       message: 'Failed to connect to Google Sheets'
     };
   }
-}; 
+};

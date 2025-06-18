@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "qr-code-scanner",
-    "slug": "qr-code-scanner",
+    "name": "QR Inventory Tracker",
+    "slug": "qr-inventory-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,21 +13,41 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gathekanav.qrinventorytracker",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.sct2025.qrcodescanner"
+      "package": "com.gathekanav.qrinventorytracker",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/icon.png"
     },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow QR Inventory Tracker to access your camera for scanning barcodes."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
-        "projectId": "a8716369-a5b5-4f3c-8797-5040976a49ee"
+        "projectId": "133d6b08-ce8a-4e8e-ab97-fe1eb6ac4c73"
       }
     }
   }

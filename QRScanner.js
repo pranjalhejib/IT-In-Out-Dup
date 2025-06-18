@@ -198,22 +198,24 @@ const QRScanner = () => {
           barcodeTypes: ["qr", "ean13", "ean8", "upc_a", "upc_e", "code39", "code128", "datamatrix", "pdf417"]
         }}
         onBarcodeScanned={scanned ? undefined : handleScan}
-      >
-        <View style={styles.overlay} >
-          <View style={styles.scanArea} />
-          {isSaving && (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#ffffff" />
-              <Text style={styles.loadingText}>Saving to Google Sheets...</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-            <Text style={styles.buttonText}>Flip Camera</Text>
-          </TouchableOpacity>
-        </View>
-      </CameraView>
+      />
+      
+      {/* Overlay content outside CameraView */}
+      <View style={styles.overlay} >
+        <View style={styles.scanArea} />
+        {isSaving && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#ffffff" />
+            <Text style={styles.loadingText}>Saving to Google Sheets...</Text>
+          </View>
+        )}
+      </View>
+      
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
+          <Text style={styles.buttonText}>Flip Camera</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -238,9 +240,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     flex: 1,
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    pointerEvents: 'none', // Allow camera to receive touch events
   },
   scanArea: {
     width: 250,
@@ -257,6 +265,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.7)',
     padding: 20,
+    pointerEvents: 'none',
   },
   loadingText: {
     color: 'white',
@@ -266,22 +275,3 @@ const styles = StyleSheet.create({
 });
 
 export default QRScanner;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
